@@ -92,7 +92,7 @@ void AccessPointMode::handleSave()
             400,
             "text/html; charset=utf-8",
             makeConfigurationPage(
-                "Paramètres manquants."
+                "Missing parameters."
             )
         );
 
@@ -109,8 +109,7 @@ void AccessPointMode::handleSave()
             400,
             "text/html; charset=utf-8",
             makeConfigurationPage(
-                "Chaque caractère doit contenir exactement "
-                "un symbole."
+                "One symbol per paddle only"
             )
         );
 
@@ -129,7 +128,7 @@ void AccessPointMode::handleSave()
             500,
             "text/html; charset=utf-8",
             makeConfigurationPage(
-                "Valeurs invalides."
+                "Invalid values."
             )
         );
 
@@ -142,7 +141,7 @@ void AccessPointMode::handleSave()
             500,
             "text/html; charset=utf-8",
             makeConfigurationPage(
-                "Impossible d'enregistrer les réglages."
+                "Settings could not be saved."
             )
         );
 
@@ -153,7 +152,7 @@ void AccessPointMode::handleSave()
         200,
         "text/html; charset=utf-8",
         makeConfigurationPage(
-            "Réglages enregistrés. Redémarrage en cours..."
+            "Settings saved. Rebooting..."
         )
     );
 
@@ -208,7 +207,11 @@ String AccessPointMode::makeConfigurationPage(
         "</style>"
         "</head>"
         "<body>"
-        "<h1>Configuration du keyer</h1>"
+        "<h1>ESP32-CW-Keyer configuration</h1>"
+        "<p style='font-style:italic;font-size:0.75em;color:#888'>"
+        "Courtesy of Jim @ SapereAudeLabs "
+        "(<a href='https://github.com/SapereAudeLabs'>github.com/SapereAudeLabs</a>)"
+        "</p>"
     );
 
     if (message.length() > 0)
