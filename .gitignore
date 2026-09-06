@@ -1,0 +1,6 @@
+.pio/
+.vscode/
+*.o
+*.bin
+*.elf
+compile_commands.json
