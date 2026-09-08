@@ -2,6 +2,7 @@
 
 #include "USB.h"
 #include "USBHIDKeyboard.h"
+#include <Adafruit_NeoPixel.h>
 
 #include "Config.h"
 #include "AccessPointMode.h"
@@ -11,6 +12,12 @@ USBHIDKeyboard Keyboard;
 
 KeyerSettingsStore settingsStore;
 AccessPointMode accessPointMode(settingsStore);
+
+Adafruit_NeoPixel pixel(
+    LED_PIXEL_COUNT,
+    LED_PIN,
+    NEO_GRB + NEO_KHZ800
+);
 
 struct Paddle
 {
@@ -51,7 +58,8 @@ uint32_t configurationStartTime = 0;
 
 void flashLed()
 {
-    digitalWrite(LED_PIN, HIGH);
+    pixel.setPixelColor(0, pixel.Color(0, 255, 0));
+    pixel.show();
 
     ledActive = true;
     ledStartTime = millis();
@@ -62,7 +70,8 @@ void updateLed()
     if (ledActive &&
         millis() - ledStartTime >= LED_FLASH_TIME_MS)
     {
-        digitalWrite(LED_PIN, LOW);
+        pixel.setPixelColor(0, 0);
+        pixel.show();
         ledActive = false;
     }
 }
@@ -172,8 +181,8 @@ void setup()
     pinMode(PADDLE_LEFT_PIN, INPUT_PULLUP);
     pinMode(PADDLE_RIGHT_PIN, INPUT_PULLUP);
 
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
+    pixel.begin();
+    pixel.show();
 
     initializePaddle(paddleLeft);
     initializePaddle(paddleRight);

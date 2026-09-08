@@ -4,3 +4,4 @@
 *.bin
 *.elf
 compile_commands.json
+local/
