@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <WebServer.h>
+#include <DNSServer.h>
 
 #include "KeyerSettings.h"
 
@@ -28,5 +29,6 @@ private:
 
     KeyerSettingsStore& settingsStore;
     WebServer server;
+    DNSServer dnsServer;
     bool running;
 };

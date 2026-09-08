@@ -22,6 +22,12 @@ bool AccessPointMode::begin()
         return false;
     }
 
+    dnsServer.start(
+        53,
+        "*",
+        WiFi.softAPIP()
+    );
+
     server.on(
         "/",
         HTTP_GET,
@@ -52,10 +58,10 @@ bool AccessPointMode::begin()
     running = true;
 
     Serial.println();
-    Serial.println("Mode configuration AP actif");
-    Serial.print("SSID : ");
+    Serial.println("Configuration mode AP active");
+    Serial.print("SSID: ");
     Serial.println(AP_SSID);
-    Serial.print("Adresse IP : ");
+    Serial.print("IP address: ");
     Serial.println(WiFi.softAPIP());
 
     return true;
@@ -65,6 +71,7 @@ void AccessPointMode::loop()
 {
     if (running)
     {
+        dnsServer.processNextRequest();
         server.handleClient();
     }
 }
@@ -86,7 +93,8 @@ void AccessPointMode::handleRoot()
 void AccessPointMode::handleSave()
 {
     if (!server.hasArg("left") ||
-        !server.hasArg("right"))
+        !server.hasArg("right") ||
+        !server.hasArg("brightness"))
     {
         server.send(
             400,
@@ -101,6 +109,7 @@ void AccessPointMode::handleSave()
 
     const String leftValue = server.arg("left");
     const String rightValue = server.arg("right");
+    const String brightnessValue = server.arg("brightness");
 
     if (leftValue.length() != 1 ||
         rightValue.length() != 1)
@@ -109,15 +118,34 @@ void AccessPointMode::handleSave()
             400,
             "text/html; charset=utf-8",
             makeConfigurationPage(
-                "One symbol per paddle only"
+                "One symbol per paddle only."
             )
         );
 
         return;
     }
 
-    const char leftCharacter = leftValue.charAt(0);
-    const char rightCharacter = rightValue.charAt(0);
+    const int brightness =
+        brightnessValue.toInt();
+
+    if (brightness < 0 || brightness > 100)
+    {
+        server.send(
+            400,
+            "text/html; charset=utf-8",
+            makeConfigurationPage(
+                "Brightness must be between 0 and 100."
+            )
+        );
+
+        return;
+    }
+
+    const char leftCharacter =
+        leftValue.charAt(0);
+
+    const char rightCharacter =
+        rightValue.charAt(0);
 
     if (!settingsStore.setCharacters(
             leftCharacter,
@@ -128,12 +156,16 @@ void AccessPointMode::handleSave()
             500,
             "text/html; charset=utf-8",
             makeConfigurationPage(
-                "Invalid values."
+                "Invalid paddle values."
             )
         );
 
         return;
     }
+
+    settingsStore.setLedBrightnessPercent(
+        static_cast<uint8_t>(brightness)
+    );
 
     if (!settingsStore.save())
     {
@@ -156,13 +188,17 @@ void AccessPointMode::handleSave()
         )
     );
 
-    Serial.println("Réglages enregistrés.");
-    Serial.print("Left Paddle character : ");
+    Serial.println("Settings saved.");
+    Serial.print("Left paddle character: ");
     Serial.println(leftCharacter);
-    Serial.print("Right Paddle character : ");
+    Serial.print("Right paddle character: ");
     Serial.println(rightCharacter);
+    Serial.print("LED brightness: ");
+    Serial.print(brightness);
+    Serial.println("%");
 
     server.client().flush();
+
     delay(500);
 
     ESP.restart();
@@ -170,10 +206,16 @@ void AccessPointMode::handleSave()
 
 void AccessPointMode::handleNotFound()
 {
+    server.sendHeader(
+        "Location",
+        String("http://") + WiFi.softAPIP().toString(),
+        true
+    );
+
     server.send(
-        404,
-        "text/plain; charset=utf-8",
-        "Page introuvable."
+        302,
+        "text/plain",
+        ""
     );
 }
 
@@ -181,36 +223,40 @@ String AccessPointMode::makeConfigurationPage(
     const String& message
 ) const
 {
-    const KeyerSettings& settings = settingsStore.get();
+    const KeyerSettings& settings =
+        settingsStore.get();
 
     String page;
 
-    page.reserve(2200);
+    page.reserve(3000);
 
     page += F(
         "<!doctype html>"
-        "<html lang='fr'>"
+        "<html lang='en'>"
         "<head>"
         "<meta charset='utf-8'>"
         "<meta name='viewport' "
         "content='width=device-width,initial-scale=1'>"
-        "<title>Morse Keyer</title>"
+        "<title>Morse Keyer Configuration</title>"
         "<style>"
         "body{font-family:sans-serif;max-width:500px;"
         "margin:40px auto;padding:0 20px}"
         "label{display:block;margin-top:20px}"
-        "input{font-size:1.4em;width:80px;padding:8px}"
+        "input[type=text]{font-size:1.4em;width:80px;padding:8px}"
+        "input[type=range]{width:100%;margin-top:10px}"
         "button{margin-top:25px;padding:12px 25px;"
         "font-size:1em}"
         ".message{padding:12px;background:#e4f4e4;"
         "margin-bottom:20px}"
+        ".brightness-value{font-weight:bold}"
         "</style>"
         "</head>"
         "<body>"
-        "<h1>ESP32-CW-Keyer configuration</h1>"
+        "<h1>Morse Keyer Configuration</h1>"
         "<p style='font-style:italic;font-size:0.75em;color:#888'>"
         "Courtesy of Jim @ SapereAudeLabs "
-        "(<a href='https://github.com/SapereAudeLabs'>github.com/SapereAudeLabs</a>)"
+        "(<a href='https://github.com/SapereAudeLabs'>"
+        "github.com/SapereAudeLabs</a>)"
         "</p>"
     );
 
@@ -223,11 +269,12 @@ String AccessPointMode::makeConfigurationPage(
 
     page += F(
         "<form method='post' action='/save'>"
+
         "<label for='left'>"
         "Left Paddle character"
         "</label>"
-        "<input id='left' name='left' maxlength='1' "
-        "required value='"
+        "<input type='text' id='left' name='left' "
+        "maxlength='1' required value='"
     );
 
     page += htmlEscape(
@@ -240,8 +287,8 @@ String AccessPointMode::makeConfigurationPage(
         "<label for='right'>"
         "Right Paddle character"
         "</label>"
-        "<input id='right' name='right' maxlength='1' "
-        "required value='"
+        "<input type='text' id='right' name='right' "
+        "maxlength='1' required value='"
     );
 
     page += htmlEscape(
@@ -250,6 +297,37 @@ String AccessPointMode::makeConfigurationPage(
 
     page += F(
         "'>"
+
+        "<label for='brightness'>"
+        "LED brightness: "
+        "<span id='brightnessValue' "
+        "class='brightness-value'>"
+    );
+
+    page += String(
+        settings.ledBrightnessPercent
+    );
+
+    page += F(
+        "</span>%"
+        "</label>"
+
+        "<input type='range' "
+        "id='brightness' "
+        "name='brightness' "
+        "min='0' "
+        "max='100' "
+        "value='"
+    );
+
+    page += String(
+        settings.ledBrightnessPercent
+    );
+
+    page += F(
+        "' "
+        "oninput='brightnessValue.textContent=this.value'>"
+
         "<br>"
         "<button type='submit'>Save and Reboot</button>"
         "</form>"
@@ -260,7 +338,9 @@ String AccessPointMode::makeConfigurationPage(
     return page;
 }
 
-String AccessPointMode::htmlEscape(const String& value) const
+String AccessPointMode::htmlEscape(
+    const String& value
+) const
 {
     String escaped = value;
 

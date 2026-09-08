@@ -49,30 +49,91 @@ Paddle paddleRight = {
     0
 };
 
-bool ledActive = false;
-uint32_t ledStartTime = 0;
 
+bool configurationLedState = false;
+uint32_t configurationLedLastChange = 0;
 bool configurationCombinationActive = false;
 bool configurationModeRequested = false;
 uint32_t configurationStartTime = 0;
 
-void flashLed()
+void setLedColor(uint8_t red, uint8_t green, uint8_t blue)
 {
-    pixel.setPixelColor(0, pixel.Color(0, 255, 0));
-    pixel.show();
+    const uint8_t brightnessPercent =
+        settingsStore.get().ledBrightnessPercent;
 
-    ledActive = true;
-    ledStartTime = millis();
+    const uint8_t brightness = map(
+        brightnessPercent,
+        0,
+        100,
+        0,
+        255
+    );
+
+    pixel.setBrightness(brightness);
+
+    pixel.setPixelColor(
+        0,
+        pixel.Color(red, green, blue)
+    );
+
+    pixel.show();
 }
 
-void updateLed()
+void updateNormalLed()
 {
-    if (ledActive &&
-        millis() - ledStartTime >= LED_FLASH_TIME_MS)
+    const KeyerSettings& settings = settingsStore.get();
+
+    if (!settings.ledEnabled)
     {
-        pixel.setPixelColor(0, 0);
-        pixel.show();
-        ledActive = false;
+        setLedColor(0, 0, 0);
+        return;
+    }
+
+    const bool leftPressed =
+        paddleLeft.stableState == LOW;
+
+    const bool rightPressed =
+        paddleRight.stableState == LOW;
+
+    if (leftPressed && rightPressed)
+    {
+        // Deux paddles : vert
+        setLedColor(0, 255, 0);
+    }
+    else if (leftPressed)
+    {
+        // Paddle gauche : bleu
+        setLedColor(0, 0, 255);
+    }
+    else if (rightPressed)
+    {
+        // Paddle droit : jaune
+        setLedColor(255, 255, 0);
+    }
+    else
+    {
+        // État normal : violet
+        setLedColor(255, 0, 255);
+    }
+}
+
+void updateConfigurationLed()
+{
+    const uint32_t now = millis();
+
+    if (now - configurationLedLastChange >= 1000)
+    {
+        configurationLedLastChange = now;
+        configurationLedState = !configurationLedState;
+
+        if (configurationLedState)
+        {
+            setLedColor(255, 0, 0);
+        }
+        else
+        {
+            setLedColor(0, 0, 0);
+        }
     }
 }
 
@@ -142,8 +203,6 @@ void processPaddle(Paddle& paddle)
         Keyboard.press(paddle.key);
         paddle.keyPressed = true;
 
-        flashLed();
-
         Serial.print("Appui paddle : ");
         Serial.println(paddle.key);
     }
@@ -210,16 +269,17 @@ void loop()
 {
     if (accessPointMode.isRunning())
     {
+        updateConfigurationLed();
         accessPointMode.loop();
         delay(2);
         return;
     }
 
-    updateLed();
-
     // Chaque paddle est lu une seule fois par cycle
     updatePaddle(paddleLeft);
     updatePaddle(paddleRight);
+
+    updateNormalLed();
 
     updateConfigurationHold();
 
