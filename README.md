@@ -8,5 +8,5 @@ Holding both paddles pressed for more than 5 seconds switches the unit into AP m
 This project contains the platformIO sources, as well as (coming soon) STL files and instructions to physically build the unit.
 
 
-![Wiring](hardware/ESP32 CW Keyer-wiring.png)
+![Wiring](hardware/ESP32%20CW%20Keyer-wiring.png)
 ![Demo](20260921_122812.mp4)
