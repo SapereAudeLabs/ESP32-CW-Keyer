@@ -15,4 +15,4 @@ This project contains the platformIO sources, as well as (coming soon) STL files
 
 ESP32-S3 are required to handle HID keyboard protocol support.
 
-Future capabilities will address recording phrases into memory solts and replays.
+Future capabilities will address recording phrases into memory slots and replays.
