@@ -14,3 +14,5 @@ Holding both paddles pressed for more than 5 seconds switches the unit into AP m
 This project contains the platformIO sources, as well as (coming soon) STL files and instructions to physically build the unit.
 
 ESP32-S3 are required to handle HID keyboard protocol support.
+
+Future capabilities will address recording phrases into memory solts and replays.
