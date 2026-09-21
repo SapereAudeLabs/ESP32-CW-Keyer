@@ -5,3 +5,5 @@
 *.elf
 compile_commands.json
 local/
+test/
+.cache/
