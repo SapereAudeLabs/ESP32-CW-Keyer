@@ -9,4 +9,3 @@ This project contains the platformIO sources, as well as (coming soon) STL files
 
 
 ![Wiring](hardware/ESP32%20CW%20Keyer-wiring.png)
-![Demo](20260921_122812.mp4)
