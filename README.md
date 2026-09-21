@@ -6,3 +6,7 @@ In USB mode, when plugged in, it is recognized as an HID keyboard and transmits 
 Holding both paddles pressed for more than 5 seconds switches the unit into AP mode, allowing you to connect via WiFi to the ESP32 to access a configuration page.
 
 This project contains the platformIO sources, as well as (coming soon) STL files and instructions to physically build the unit.
+
+
+![Wiring](hardware/ESP32 CW Keyer-wiring.png)
+![Demo](20260921_122812.mp4)
